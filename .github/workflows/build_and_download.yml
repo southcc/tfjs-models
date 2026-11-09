@@ -1,0 +1,43 @@
+name: Build and Pack AI Visualizer
+
+on:
+  push:
+    branches:
+      - master # 如果你的默认分支叫 main，请改为 main
+
+jobs:
+  build-and-pack:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 拉取你的代码
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. 设置云端 Node.js 环境
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: 'knn-classifier/demo/package.json'
+
+    # 3. 在云端安装依赖
+    - name: Install Dependencies
+      run: |
+        cd knn-classifier/demo
+        npm install
+
+    # 4. 在云端执行打包构建 (生成绝对离线可用的静态 dist 文件夹)
+    - name: Build Project
+      run: |
+        cd knn-classifier/demo
+        npm run build
+
+    # 5. 🔴 核心步骤：将打包好的 dist 文件夹转换为线上可下载的 Artifact 压缩包
+    - name: Upload Packaged Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: teachable-machine-local-app  # 下载时的压缩包文件名
+        path: knn-classifier/demo/dist/     # 需要打包的路径
+        retention-days: 7                   # 在线上保留 7 天供你下载
