@@ -22,22 +22,31 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'knn-classifier/demo/package.json'
 
-    # 3. 在云端安装依赖
+    # 3. 🔴 强力清障：强制删除 demo 目录下和项目根目录的所有残存锁文件，防止引发 yarn 崩溃
+    - name: Clean Up Old Lock Files
+      run: |
+        rm -f knn-classifier/demo/yarn.lock
+        rm -f knn-classifier/demo/package-lock.json
+        rm -f yarn.lock
+        rm -f package-lock.json
+
+    # 4. 在云端安装依赖，并主动追加安装 babel-preset-env，斩断后续自动触发漏洞
     - name: Install Dependencies
       run: |
         cd knn-classifier/demo
         npm install
+        npm install babel-preset-env --no-save
 
-    # 4. 在云端执行打包构建 (生成绝对离线可用的静态 dist 文件夹)
+    # 5. 🔴 终极修复打包：加入 --no-autoinstall 标志，强行锁死打包器行为，不允许后台自动下载包
     - name: Build Project
       run: |
         cd knn-classifier/demo
-        npm run build
+        npm run build -- --no-autoinstall
 
-    # 5. 🔴 核心步骤：将打包好的 dist 文件夹转换为线上可下载的 Artifact 压缩包
+    # 6. 将打包好的离线 dist 静态文件夹发布为 ZIP 供你下载
     - name: Upload Packaged Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: teachable-machine-local-app  # 下载时的压缩包文件名
-        path: knn-classifier/demo/dist/     # 需要打包的路径
-        retention-days: 7                   # 在线上保留 7 天供你下载
+        name: teachable-machine-local-app
+        path: knn-classifier/demo/dist/
+        retention-days: 7
